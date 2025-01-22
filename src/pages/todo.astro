@@ -1,0 +1,9 @@
+---
+import Todos from '../components/Todo.svelte';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+  <Todos client:only="svelte" />
+</Layout>
+

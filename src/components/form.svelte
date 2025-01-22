@@ -1,7 +1,6 @@
 <script lang="ts">
   export let url: string;
   function handlerSubmit(event: Event) {
-    event.preventDefault();
     const form = event.target as HTMLFormElement;
     const order = Object.fromEntries(new FormData(form).entries());
     try {
@@ -18,7 +17,7 @@
   }
 </script>
 <form
-  on:submit={handlerSubmit}
+  on:submit|preventDefault={handlerSubmit}
   class="bg-white p-4 rounded-lg w-1/2"
 >
     <slot></slot>
