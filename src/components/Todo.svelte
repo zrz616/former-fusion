@@ -5,11 +5,18 @@
     completed: boolean;
   }[] = [];
   let editing: number = -1;
-  $: filtered = todos.filter((todo) => !!todo.description);
+  let currentFilter: string = "all";
+  $: filtered = todos.filter((todo) => {
+    return currentFilter === "all"
+      ? !!todo.description
+      : currentFilter === "active"
+        ? !todo.completed
+        : todo.completed;
+  });
 
   let input: HTMLInputElement, editInput: HTMLInputElement;
 
-  let handleKeyDown = (event: KeyboardEvent) => {
+  const handleKeyDown = (event: KeyboardEvent) => {
     if (input && input.value === "") return;
     if (event.key === "Enter" && input) {
       // todos = [...todos, input.value];
@@ -23,28 +30,54 @@
     }
   };
 
-  let deleteItem = (index: number) => {
+  const deleteItem = (index: number) => {
     todos = todos.filter((_, i) => i !== index);
   };
 
-  let updateItem = (index: number, value: string) => {
+  const updateItem = (index: number, value: string) => {
     if (index === -1) return;
     if (value === "") {
       deleteItem(index);
       return;
     }
     todos = todos.map((todo, i) =>
-      i === index ? { id: i, description: value, completed: false } : todo,
+      i === index ? { ...todo, description: value } : todo,
     );
   };
 
-  let editBlur = (e: Event) => {
+  const editBlur = (e: Event) => {
     updateItem(editing, (e.target as HTMLInputElement).value);
     editing = -1;
   };
 
-  let showEdit = (index: number) => {
+  const showEdit = (index: number) => {
     editing = index;
+  };
+
+  const numActive = () => {
+    return todos.filter((todo) => !todo.completed).length;
+  };
+
+  let draggedIndex: number = -1;
+  let dragoverIndex: number = -1;
+
+  const handleDragStart = (index: number) => {
+    draggedIndex = index;
+  };
+
+  const handleDragOver = (e: DragEvent, index: number) => {
+    e.preventDefault();
+    dragoverIndex = index;
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    if (draggedIndex === -1 || dragoverIndex === -1) return;
+    const temp = todos[draggedIndex];
+    todos[draggedIndex] = todos[dragoverIndex];
+    todos[dragoverIndex] = temp;
+    draggedIndex = -1;
+    dragoverIndex = -1;
   };
 
   $: if (editing !== -1 && editInput) {
@@ -75,11 +108,17 @@
       <ul class="w-full">
         {#each filtered as item, index}
           <li
+            draggable="true"
+            ondragstart={() => handleDragStart(index)}
+            ondragover={(e: DragEvent) => handleDragOver(e, index)}
+            ondrop={(e: DragEvent) => handleDrop(e)}
             class="flex items-center justify-between border-b border-gray-300 p-2"
           >
-            <div class:toggle={item.completed} class="view relative flex items-center space-x-4 ml-0">
+            <div
+              class:toggle={item.completed}
+              class="view relative flex items-center space-x-4 ml-0"
+            >
               <input
-                id={"todo-" + index}
                 type="checkbox"
                 class="opacity-0 h-8 w-8 absolute left-2"
                 bind:checked={item.completed}
@@ -101,7 +140,8 @@
                 />
               {:else}
                 <label
-                  for={"todo-" + index}
+                  class={[{ "line-through text-gray-400": item.completed}, "w-96 truncate"]}
+                  for={`todo-${index}`}
                   tabindex="-1"
                   ondblclick={() => showEdit(index)}
                 >
@@ -124,6 +164,52 @@
             </div>
           </li>
         {/each}
+        <li>
+          <div
+            class="flex items-center justify-between border-b border-gray-300 p-2"
+          >
+            <div class="flex items-center space-x-4">
+              <span class="text-xs text-gray-600">Active: {numActive()}</span>
+            </div>
+            <div>
+              <!-- select all active completed -->
+              <div class="flex items-center space-x-4">
+                <button
+                  class:outline={currentFilter === "all"}
+                  class="text-xs text-gray-600 outline-1 outline-rose-700 p-1 rounded-sm"
+                  onclick="{() => (currentFilter = 'all')}"
+                >
+                  All
+                </button>
+                <button
+                  class:outline={currentFilter === "active"}
+                  class="text-xs text-gray-600 outline-1 outline-rose-700 p-1 rounded-sm"
+                  onclick="{() => (currentFilter = 'active')}"
+                >
+                  Active
+                </button>
+                <button
+                  class:outline={currentFilter === "completed"}
+                  class="text-xs text-gray-600 outline-1 outline-rose-700 p-1 rounded-sm"
+                  onclick="{() => (currentFilter = 'completed')}"
+                >
+                  Completed
+                </button>
+              </div>
+            </div>
+            <div>
+              <button
+                class="text-xs text-gray-600 hover:text-red-600"
+                onclick={() =>
+                  (todos = todos.map((todo) => {
+                    return { ...todo, completed: true };
+                  }))}
+              >
+                Clear Completed
+              </button>
+            </div>
+          </div>
+        </li>
       </ul>
     </div>
   </section>
