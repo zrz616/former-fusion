@@ -4,6 +4,11 @@
     description: string;
     completed: boolean;
   }[] = [];
+  try {
+		todos = JSON.parse(localStorage.getItem('todos-svelte') || '[]');
+	} catch {
+		todos = [];
+	}
   let editing: number = -1;
   let currentFilter: string = "all";
   $: filtered = todos.filter((todo) => {
@@ -19,13 +24,22 @@
   const handleKeyDown = (event: KeyboardEvent) => {
     if (input && input.value === "") return;
     if (event.key === "Enter" && input) {
-      // todos = [...todos, input.value];
-      todos.push({
+      todos = [...todos, {
         id: todos.length,
         description: input.value,
         completed: false,
-      });
-      todos = todos;
+      }];
+      // todos.push({
+      //   id: todos.length,
+      //   description: input.value,
+      //   completed: false,
+      // });
+      // todos = todos;
+      // todos[todos.length] = {
+      //   id: todos.length,
+      //   description: input.value,
+      //   completed: false,
+      // };
       input.value = "";
     }
   };
@@ -82,6 +96,12 @@
 
   $: if (editing !== -1 && editInput) {
     editInput.focus();
+  }
+
+  $: try {
+    localStorage.setItem('todos-svelte', JSON.stringify(todos));
+  } catch {
+    console.error('Failed to save todos to localStorage');
   }
 </script>
 
