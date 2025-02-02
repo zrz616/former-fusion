@@ -1,0 +1,6 @@
+# image: node:buster tasks: pnpm dev
+tasks:
+  - init: pnpm install
+    command: pnpm dev
+    openMode: split-right
+image: node:buster
